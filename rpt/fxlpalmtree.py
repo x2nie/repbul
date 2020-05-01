@@ -20,13 +20,42 @@ def strToPaths(pathf):
         paths=[pathf]
     therow=list()
     for path in paths:
-        if path.find(':') >=0:
-            therow.append(path.split(':'))
+        if path:
+            if path.find(':') >=0:
+                (band,kind) = path.split(':')
+            else:
+                band = path
+                kind = 'DAT'
+            band = band.strip('~')
+            kind = {'F':'FOT', 'H':'HDR', 'D':'DAT', 'A':'ALT'}.get(kind, kind)
+            therow.append([band,kind])
+        # elif path.strip():
+            # therow.append([path,'DAT'])
         else:
             #therow.append([path]) # NO WAY! only perfect format is supported.
             therow.append(['',''])
     return therow
 
+class Tpl(object):
+    def __init__(self, cell):
+        self.value = cell.value
+        
+    def __repr__(self):
+        return '' if self.value == None else str(self.value)
+        
+def parse_row(row):
+    # return [Tpl(cell) for cell in row[1:]]
+    cells = [Tpl(cell) for cell in row[1:]]
+    while cells and not cells[-1].value:
+        cells.pop()
+    # z = len(cells) -1
+    # for i,c in enumerate(reversed(cells)):
+        # if c.value:
+            # z -= i
+            # break
+    # cells = cells[:z]
+    print(len(cells))
+    return cells
 
 ### ========================================================================= ###
 ### ######   UPDATE =FORMULA() ()  ######################################### ###
@@ -372,13 +401,17 @@ class palmTree():
         "identify seed's cluster of a worksheet by path-flag, row-by-row"
         self.clear()
         #HARVEST EACH ROW
-        for row in workseed.RowS:
-            row = xlRow(row)
-            cell = row.Cell(0) #first cellbit
-            if not cell or cell.getssIndex():
-                self.put([['','']], row)
+        for row in workseed.rows:
+            # row = xlRow(row)
+            # for cell in row:
+                # print('cell:',cell, dir(cell))
+            # break
+            # cell = row[0] #first cellbit
+            flag = row[0].value
+            if not flag:
+                self.put([['','']], parse_row(row))
                 continue # force next row, there is no more cell for scanning
-            flag = cell.getText()
             paths = strToPaths(flag) # we rely on strToPaths() of parsing the format
-            self.put(paths, row)
+            print( row[0].value, paths )
+            self.put(paths, parse_row(row))
             
