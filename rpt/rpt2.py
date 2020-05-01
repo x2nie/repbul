@@ -8,6 +8,9 @@ wbOut = xls.Workbook()
 tpl = wbIn.active
 ws2 = wbOut.active
 # print( dir(tpl) )
+for m in tpl.merged_cells:
+    print(m, m.min_row, m.min_col, m.max_col, dir(m))
+# print( tpl.merged_cells )
 print( dir(tpl.sheet_format) )
 print( 'COLS',[c for c in tpl.columns] )
 
