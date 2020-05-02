@@ -35,6 +35,9 @@ def load_dats(folder, onrow=None):
         if onrow:
             onrow(o)
         data.append(o)
+        
+        if len(data) > 5:
+            break #limit dev
         # print(o)
     # pprint(data)
     # pprint([d for d in data if d.get('BillOfMaterials')])

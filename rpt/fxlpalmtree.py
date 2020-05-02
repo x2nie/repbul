@@ -13,6 +13,7 @@ from xml.dom.minidom import Element
 import re
 
 BANDS = {}
+YCELL = 0
 def strToPaths(pathf):
     if pathf.find('.') >=0:
         paths=pathf.split('.')
@@ -39,6 +40,17 @@ def strToPaths(pathf):
 class Tpl(object):
     def __init__(self, cell):
         self.value = cell.value
+        if self.value:
+            self.style = cell.style
+        self._field = cell.comment.text if cell.comment else None
+            
+    def apply(self, cell, data):
+        if self._field:
+            print('_f:', self._field)
+            print(data)
+            cell.value = data.get(self._field)
+        else:
+            cell.value = self.value
         
     def __repr__(self):
         return '' if self.value == None else str(self.value)
@@ -129,16 +141,17 @@ def _validateName(xl,tplDatAltRowcount,datcount):
 ### ######   FILL A SINGLE ROW ()  ######################################### ###
 ### ========================================================================= ###
 
-def _fillxlrow(parsed,templateRow,typvars,vars):
-    row = templateRow.row.ownerDocument.importNode(templateRow.row,1)
-    row = xlRow(row)
-    #print row.toxml()
-    
-    for icell in range(len(row.CellS)):
-        cell = row.Cell(icell)
-        txt = cell.getText()
-        if txt.find(':') >=0:
-            cell.setText('')
+def _fillxlrow(worksheet,row,typvars,vars):
+    global YCELL
+    YCELL +=1 # ws.cell() always require one based (not zero based)
+    for x,tcell in enumerate(row):
+        col = x+1 # ws.cell() always require one based (not zero based)
+        cell=worksheet.cell(row=YCELL, column=col)
+        # txt = cell.getText()
+        if True:
+            tcell.apply(cell, vars)
+        # elif txt.find(':') >=0:
+            # cell.setText('')
         else:
             f = cell.getFormula()
             if f and f.rfind(')') < 0: #its lookup to the name
@@ -162,12 +175,64 @@ def _fillxlrow(parsed,templateRow,typvars,vars):
                     #else: cell.setText('diubah(%s)' % varf)
                 except:
                     pass
-    parsed.Table.appendChild(row.row)
+    # parsed.Table.appendChild(row.row)
     return 1 #single row
 
+class fxl:
+    ''' 
+    XML-Excel-spreadsheet format Filler
+    PLAIN MODEL. 
+    All inheritence may implement in colaboration with CSV,Dictionary,DB, etc...
+    All inheritence must Consist at least methods: hasData() and bandData() and bandHeader()  
+    '''
+    def __init__( self ):
+        self.parent = ''
+        if not hasattr( self, 'child' ):
+            self.child = {}
+        self.counter = 0
+        self.xl = None
+        #self.cur=None
+        #self.params={}
+        #self.defaults={}
+        #self.SQL=''
+        #register class instance:
+        if not hasattr( self, '_name' ):
+            self._name = self.__class__.__name__
+        BANDS[self._name] = self
+        #else: BANDS[self.__class__.__name__] = self
+
+    #def onCreate(self):
+    def init( self ): #its call before any worksheet parsed.
+        pass
+    
+    def hasData( self ):
+        "Needed for prevent endless loop"
+        return self.counter < 3
+    
+    def reset( self ):
+        self.counter = 0
+        
+    def bandTitle( self ):
+        #canReturn= ['How Much','Where','When']
+        return []
+    
+    def bandType( self ):
+        #canReturn= ['Number','String','DateTime']
+        return []
+    
+    def bandData( self ):
+        if self.hasData():
+            self.counter += 1
+            ##t=time.time()
+            t = datetime.fromtimestamp( time.time() )
+            t = t.strftime( '%Y-%m-%dT%H:%M:%S' )
+            return {'No.':self.counter, 'str':'Number' + str( self.counter ), 'today':t}
+        else:
+            return {}
+            
 class palmTree():
     "PalmTree is advanced mechanism of FXL Report Builder using class() for it iteration"
-    def __init__(self,paths=None,rowobj=None):
+    def __init__(self,paths=None,rowobj=None, parent=None):
         if paths and paths[0] != '':
             self.Band=paths[0][0]
             #self.Kind={'HDR':list(),'DAT':list(),'ALT':list(),'FOT':list()}            
@@ -175,6 +240,7 @@ class palmTree():
             self.Band=''
             #self.tree=list()
         self.clear()
+        self.parent = parent
         if rowobj:
             self.put(paths, rowobj)
     def __len__(self):
@@ -209,7 +275,7 @@ class palmTree():
                     band,kind=ownpath
                     #kind=ownpath[1]
                     if not self.Kind[kind]:
-                        self.Kind[kind]=palmTree()
+                        self.Kind[kind]=palmTree(parent=self)
                     self.Kind[kind].tree.append(rowobj)
                 except:
                     pass
@@ -223,7 +289,7 @@ class palmTree():
         elif not self.accept(paths, rowobj):
             if ownpath and ownpath[0]==self.Band: #exp.: kpi:FOT
                 if not self.Kind[ownpath[1]]:
-                    self.Kind[ownpath[1]]=palmTree() # create New
+                    self.Kind[ownpath[1]]=palmTree(parent=self) # create New
                     #self.Kind[ownpath[1]].append(palmTree()) # create New
                 found=False
                 for twig in self.Kind[ownpath[1]].tree:
@@ -231,7 +297,7 @@ class palmTree():
                         found=True
                         break
                 if not found:
-                    self.Kind[ownpath[1]].tree.append(palmTree(paths,rowobj))                
+                    self.Kind[ownpath[1]].tree.append(palmTree(paths,rowobj, parent=self))                
             else:
                 found=False
                 for twig in self.tree:
@@ -240,11 +306,11 @@ class palmTree():
                         break
                 if not found:
                     #ownpath=paths.pop(0)
-                    self.tree.append(palmTree(paths,rowobj))
+                    self.tree.append(palmTree(paths,rowobj,parent=self))
                     
-    def harvestCluster(self,xl,harvest,plainvars):
+    def harvestCluster(self,harvest,plainvars):
         "fill a single cluster. a cluster exists of HDR,DAT,ALT,FOT"        
-        if not BANDS.has_key(self.Band): #exit()        
+        if not self.Band in BANDS: #exit()        
             #return False,False            
             return
         BANDS[self.Band].reset()
@@ -267,20 +333,19 @@ class palmTree():
             while True: #has data?
                 myvars.update(self.dynvar)        
                 for cluster in self.Kind[kind]:
-                    if isinstance(cluster,Element): 
+                    if isinstance(cluster,list): 
                         if kind=='FOT':
                             _validateFoot(cluster,self.tplDatAltRows,self.datharvested)
-                        #def _fillxlrow(parsed,templateRow,type,vars):
                         if self.dynvar or kind in ['HDR']:
                             #DONT PRINT IF NO DATA, BUT HDR IS ALWAYS PRINT
                             rowsharvest+=_fillxlrow(harvest,cluster,self.ssTypeS,myvars)         
                     elif isinstance(cluster,palmTree):
-                        cluster.harvestCluster(xl,harvest,plainvars)
+                        cluster.harvestCluster(harvest,plainvars)
                 
                 if kind in ['DAT','ALT']: #fetch next:
                     self.datharvested+=1
                     if not BANDS[self.Band].hasData():
-                        _validateName(xl,self.tplDatAltRows,self.datharvested)
+                        # _validateName(xl,self.tplDatAltRows,self.datharvested)
                         break
                     self.dynvar=BANDS[self.Band].bandData()
                     if self.usealt: # and kind=='DAT': #--- selang-seling
@@ -291,9 +356,10 @@ class palmTree():
                             kind='DAT'
                 else:
                     break
+                if YCELL > 30: 
+                    break #limit develoopment
                 
                 
-                #rowsharvest+=_fillxlrows(harvest,hdr['Rows'],self.ssTypeS,myvars)
         #=======================================================================
         # dat=GROUP['DAT']
         # tplDatAltRows+=len(dat['Rows'])
@@ -311,7 +377,7 @@ class palmTree():
         # if GROUP.has_key('HDR'):
         #    hdr=GROUP['HDR']
         #    myvars.update(data)
-        #    rowsharvest+=_fillxlrows(harvest,hdr['Rows'],type,myvars)
+        
         #    
         # #--------------------------------- DAT
         # datcount=0
@@ -323,7 +389,6 @@ class palmTree():
         #    else: 
         #        rows = dat
         #    myvars.update(data)    
-        #    rowsharvest+=_fillxlrows(harvest,rows['Rows'],type,myvars)
         #    data=BANDS[band].bandData()
         #    if alt: usalt = not usalt
         # 
@@ -333,27 +398,25 @@ class palmTree():
         #    myvars.update(data)
         #    for row in foot['Rows'].values():
         #        _validateFoot(row,tplDatAltRows,datcount)
-        #    rowsharvest+=_fillxlrows(harvest,foot['Rows'],type,myvars)
         #    
         # #--------------------------------- NAMES
         # _validateName(xl,tplDatAltRows,datcount)
         #=======================================================================
     
-    def harvestFarm(self,xl,worksheet,cur,ourvars={}):
+    def harvestFarm(self,worksheet,ourvars={}):
         "fill a worksheet with clustered-seed that prepared previously"
         
-        if not self.tree: return worksheet.Table,worksheet.Table
+        # if not self.tree: 
+            # return worksheet
 
-        harvest=worksheet.worksheet.ownerDocument.importNode(worksheet.worksheet,1)
+        # harvest=worksheet.worksheet.ownerDocument.importNode(worksheet.worksheet,1)        
         
-        #oldTableObj=worksheet.Table
-        #bring DOM.obj to xl-worksheet object
-        harvest=xlWorksheet(harvest)
-        harvest.clearRows()
+        # harvest=xlWorksheet(harvest)
+        # harvest.clearRows()
         
         #WE WILL NOT CONTINUE WHILE NO BANDS DEFINED
         if not self.tree: #return worksheet.Table,worksheet.Table
-            return worksheet.Table,harvest.Table
+            return worksheet
         
         #=======================================================================
         # for Band in BANDS:
@@ -373,11 +436,11 @@ class palmTree():
             #reset vars tobe harvest
             plainvars=ourvars.copy()
             #if not GROUP.has_key('DAT'):
-            if isinstance(cluster,Element):
-                rowsharvest+=_fillxlrow(harvest,cluster,None,plainvars)         
+            if isinstance(cluster,list):
+                rowsharvest+=_fillxlrow(worksheet,cluster,None,plainvars)         
             elif isinstance(cluster,palmTree):
-                cluster.harvestCluster(xl,harvest,plainvars)
-        return worksheet.Table,harvest.Table
+                cluster.harvestCluster(worksheet,plainvars)
+        return worksheet
 
     def showMap(self):
         "export inner class into array/list-dict structure"

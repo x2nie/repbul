@@ -4,10 +4,10 @@ from pprint import pprint
 
 # wb = openpyxl.load_workbook('Report Inventory Recipe Forecast.xlsx', read_only=False)
 wb = openpyxl.load_workbook('flat.xlsx')
-# wb2 = openpyxl.load_workbook('file2.xlsx')
+wb2 = openpyxl.Workbook()
 
 tpl = wb.active
-# ws2 = wb2.active 
+ws = wb2.active 
 # print( dir(cell.column) )
 # for (row, col), source_cell  in tpl._cells.items():
 #     print('!', row, col)
@@ -15,6 +15,47 @@ tpl = wb.active
 palm = fxlpalmtree.palmTree()
 palm.arrangeSeed(tpl)
 pprint( palm.showMap() )
+
+class myItems(fxlpalmtree.fxl):
+    _name = 'Item'
+
+    #def onCreate(self):
+    def init( self ): #its call before any worksheet parsed.
+        from Items import dats
+        self.data = dats
+    
+    def hasData( self ):
+        "Needed for prevent endless loop"
+        return self.counter < len(self.data)
+    
+    def reset( self ):
+        self.counter = 0
+        self.init()
+        
+    def bandTitle( self ):
+        #canReturn= ['How Much','Where','When']
+        return []
+    
+    def bandType( self ):
+        #canReturn= ['Number','String','DateTime']
+        return []
+    
+    def bandData( self ):
+        if self.hasData():
+            dat = self.data[self.counter]
+            self.counter += 1
+            return dat
+            ##t=time.time()
+            # t = datetime.fromtimestamp( time.time() )
+            # t = t.strftime( '%Y-%m-%dT%H:%M:%S' )
+            # return {'No.':self.counter, 'str':'Number' + str( self.counter ), 'today':t}
+        else:
+            return {}
+
+myItems()
+palm.harvestFarm(ws)
+
+wb2.save('flat-out.xlsx')
 
 # for i, cd in ws1.column_dimensions.items():
 #     print(i, cd.width, cd.index)
