@@ -24,7 +24,7 @@ def load_dats(folder, onrow=None):
     data = []
     ids = {}
     for dat_file in dat_files:
-        print( 'loading:',dat_file )
+        print( 'loading',folder,':',dat_file )
         with open(join(dats_dir, dat_file), 'r') as f: 
             row = f.read()
         # print( row )
@@ -36,8 +36,8 @@ def load_dats(folder, onrow=None):
             onrow(o)
         data.append(o)
         
-        if len(data) > 15:
-            break #limit dev
+        # if len(data) > 15:
+        #     break #limit dev
         # print(o)
     # pprint(data)
     # pprint([d for d in data if d.get('BillOfMaterials')])

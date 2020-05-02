@@ -30,7 +30,10 @@ def onrow(d):
         
 dats = load_dats('Items', onrow)
 
-
+def getItemByName(name):
+    for item in dats:
+        if item['Name'] == name:
+            return item
 
 if __name__ == "__main__":
     # print(dats)

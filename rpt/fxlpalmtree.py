@@ -69,7 +69,7 @@ def parse_row(row):
             # z -= i
             # break
     # cells = cells[:z]
-    print(len(cells))
+    # print(len(cells))
     return cells
 
 ### ========================================================================= ###
@@ -78,6 +78,7 @@ def parse_row(row):
 
 def _validateFoot(row,tplDatAltRowcount,datcount):
     "Handle the formula which is ranged within DAT..ALT into whole parsed of DAT..ALT"
+    return
     for icell in range(len(row.CellS)):
         cell = row.Cell(icell)
         f = cell.getFormula()
@@ -193,7 +194,7 @@ class fxl:
         if not hasattr( self, 'child' ):
             self.child = {}
         self.counter = 0
-        self.xl = None
+        self.data = []
         #self.cur=None
         #self.params={}
         #self.defaults={}
@@ -210,11 +211,25 @@ class fxl:
     
     def hasData( self ):
         "Needed for prevent endless loop"
-        return self.counter < 3
+        return self.counter < len(self.data)
     
     def reset( self ):
-        self.counter = 0
+        # print('='*50, 'RESET', self._name)
+        self.counter = 0        
+        self.init()
         
+    def bandData( self, advance=True ):
+        if self.hasData():
+            dat = self.data[self.counter]
+            self.counter += 1 if advance else 0
+            return dat
+            ##t=time.time()
+            # t = datetime.fromtimestamp( time.time() )
+            # t = t.strftime( '%Y-%m-%dT%H:%M:%S' )
+            # return {'No.':self.counter, 'str':'Number' + str( self.counter ), 'today':t}
+        else:
+            return {}
+            
     def bandTitle( self ):
         #canReturn= ['How Much','Where','When']
         return []
@@ -222,16 +237,6 @@ class fxl:
     def bandType( self ):
         #canReturn= ['Number','String','DateTime']
         return []
-    
-    def bandData( self ):
-        if self.hasData():
-            self.counter += 1
-            ##t=time.time()
-            t = datetime.fromtimestamp( time.time() )
-            t = t.strftime( '%Y-%m-%dT%H:%M:%S' )
-            return {'No.':self.counter, 'str':'Number' + str( self.counter ), 'today':t}
-        else:
-            return {}
             
 class palmTree():
     "PalmTree is advanced mechanism of FXL Report Builder using class() for it iteration"
@@ -250,7 +255,9 @@ class palmTree():
         return len(self.tree)
     
     def __iter__(self):
-        return self
+        # return self
+        for i in self.tree:
+            yield i
     
     def next(self):
         if not self.tree or self.curiter >= len(self.tree):
@@ -333,7 +340,7 @@ class palmTree():
             if not self.Kind[kind]: continue #skip if empty
                         
                             
-            while True: #has data?
+            while True: #run through row for given dat.
                 myvars.update(self.dynvar)        
                 for cluster in self.Kind[kind]:
                     if isinstance(cluster,list): 
@@ -344,8 +351,11 @@ class palmTree():
                             rowsharvest+=_fillxlrow(harvest,cluster,self.ssTypeS,myvars)         
                     elif isinstance(cluster,palmTree):
                         cluster.harvestCluster(harvest,plainvars)
+                    # else:
+                        # print('UNKNOWN CLUSTER2 TYPE:', type(cluster), cluster)
                 
                 if kind in ['DAT','ALT']: #fetch next:
+                    # print('KIND =',kind)
                     self.datharvested+=1
                     if not BANDS[self.Band].hasData():
                         # _validateName(xl,self.tplDatAltRows,self.datharvested)
@@ -443,6 +453,8 @@ class palmTree():
                 rowsharvest+=_fillxlrow(worksheet,cluster,None,plainvars)         
             elif isinstance(cluster,palmTree):
                 cluster.harvestCluster(worksheet,plainvars)
+            else:
+                print('UNKNOWN CLUSTER TYPE:', cluster)
         return worksheet
 
     def showMap(self):
@@ -478,6 +490,6 @@ class palmTree():
                 self.put([['','']], parse_row(row))
                 continue # force next row, there is no more cell for scanning
             paths = strToPaths(flag) # we rely on strToPaths() of parsing the format
-            print( row[0].value, paths )
+            # print( row[0].value, paths )
             self.put(paths, parse_row(row))
             
