@@ -42,18 +42,18 @@ class Tpl(object):
     def __init__(self, cell):
         self.value = cell.value
         # if self.value:
-        self.style = cell.style if self.value else None
+        self.style = copy(cell._style) if self.value else None
         self._field = cell.comment.text if cell.comment else None
             
     def apply(self, cell, data):
         if self._field:
-            print('_f:', self._field)
-            print(data)
+            # print('_f:', self._field)
+            # print(data)
             cell.value = data.get(self._field)
         else:
             cell.value = self.value
         if self.style:
-            cell.style = copy(self.style)
+            cell._style = copy(self.style)
         
     def __repr__(self):
         return '' if self.value == None else str(self.value)
@@ -359,8 +359,8 @@ class palmTree():
                             kind='DAT'
                 else:
                     break
-                if YCELL > 30: 
-                    break #limit develoopment
+                # if YCELL > 30: 
+                    # break #limit develoopment
                 
                 
         #=======================================================================

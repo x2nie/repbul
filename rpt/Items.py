@@ -16,7 +16,9 @@ def onrow(d):
     cat = getCategory(d['Category'])
     d['CategoryName'] = cat['Name']
     d['Subcategory'] = cat.get('Subcategory')
-    d['Price'] = int(d['Price'])
+    Price = d['Price']
+    frix = int(d['CostDigits'])*-1
+    d['Price'] = float(Price[:frix]+'.'+Price[frix:])
     BoM = []
     if d.get('BillOfMaterials'):  #  {'BillOfMaterials': '"SY0031/1","SY0064/1","PK0015/1",',
         p = d['BillOfMaterials']
