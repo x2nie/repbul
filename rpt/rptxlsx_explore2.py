@@ -1,16 +1,24 @@
 import openpyxl
 import fxlpalmtree
 from pprint import pprint
+from copy import copy
 
 # wb = openpyxl.load_workbook('Report Inventory Recipe Forecast.xlsx', read_only=False)
 wb = openpyxl.load_workbook('flat.xlsx')
-wb2 = openpyxl.Workbook()
-
 tpl = wb.active
-ws = wb2.active 
+
+# wb2 = openpyxl.Workbook()
+# ws = wb2.active 
+wb2 = wb
+
+ws = wb2.create_sheet()
+
 # print( dir(cell.column) )
 # for (row, col), source_cell  in tpl._cells.items():
 #     print('!', row, col)
+for i, cd in tpl.column_dimensions.items():
+    ws.column_dimensions[i].width = cd.width
+ws.sheet_format = copy(tpl.sheet_format)
 
 palm = fxlpalmtree.palmTree()
 palm.arrangeSeed(tpl)

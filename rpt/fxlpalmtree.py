@@ -9,8 +9,9 @@ It's used and is part of fxl Report Builder.
 
 # from xlsdom import xlDoc,xlWorksheet,xlCell,xlRow
 # from fxl import BANDS
-from xml.dom.minidom import Element
+# from xml.dom.minidom import Element
 import re
+from copy import copy
 
 BANDS = {}
 YCELL = 0
@@ -40,8 +41,8 @@ def strToPaths(pathf):
 class Tpl(object):
     def __init__(self, cell):
         self.value = cell.value
-        if self.value:
-            self.style = cell.style
+        # if self.value:
+        self.style = cell.style if self.value else None
         self._field = cell.comment.text if cell.comment else None
             
     def apply(self, cell, data):
@@ -51,6 +52,8 @@ class Tpl(object):
             cell.value = data.get(self._field)
         else:
             cell.value = self.value
+        if self.style:
+            cell.style = copy(self.style)
         
     def __repr__(self):
         return '' if self.value == None else str(self.value)

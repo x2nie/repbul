@@ -36,7 +36,7 @@ def load_dats(folder, onrow=None):
             onrow(o)
         data.append(o)
         
-        if len(data) > 5:
+        if len(data) > 15:
             break #limit dev
         # print(o)
     # pprint(data)

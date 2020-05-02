@@ -1,6 +1,22 @@
+from Categories import dats as cats
 from dat import load_dats
 
+def getCategoryName(id):
+    for cat in cats:
+        if cat['id'] == id:
+            return cat['Name']
+
+def getCategory(id):
+    for cat in cats:
+        if cat['id'] == id:
+            return cat
+
 def onrow(d):
+    # d['CategoryName'] = getCategoryName(d['Category'])
+    cat = getCategory(d['Category'])
+    d['CategoryName'] = cat['Name']
+    d['Subcategory'] = cat.get('Subcategory')
+    d['Price'] = int(d['Price'])
     BoM = []
     if d.get('BillOfMaterials'):  #  {'BillOfMaterials': '"SY0031/1","SY0064/1","PK0015/1",',
         p = d['BillOfMaterials']
