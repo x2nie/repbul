@@ -13,6 +13,7 @@ def getCategory(id):
 
 def onrow(d):
     # d['CategoryName'] = getCategoryName(d['Category'])
+    d['Description'] = d['Description'].strip()
     cat = getCategory(d['Category'])
     d['CategoryName'] = cat['Name']
     d['Subcategory'] = cat.get('Subcategory')
