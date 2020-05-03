@@ -203,7 +203,8 @@ class fxl:
         if not hasattr( self, 'child' ):
             self.child = {}
         self.counter = 0
-        self.data = []
+        self.datas = []
+        self.data = {}
         #self.cur=None
         #self.params={}
         #self.defaults={}
@@ -220,18 +221,18 @@ class fxl:
     
     def hasData( self ):
         "Needed for prevent endless loop"
-        return self.counter < len(self.data)
+        return self.counter < len(self.datas)
     
     def reset( self ):
         # print('='*50, 'RESET', self._name)
         self.counter = 0        
         self.init()
         
-    def bandData( self, advance=True ):
+    def bandData( self ):
         if self.hasData():
-            dat = self.data[self.counter]
-            self.counter += 1 if advance else 0
-            return dat
+            data = self.data = self.datas[self.counter]
+            self.counter += 1 #if advance else 0
+            return data
             ##t=time.time()
             # t = datetime.fromtimestamp( time.time() )
             # t = t.strftime( '%Y-%m-%dT%H:%M:%S' )

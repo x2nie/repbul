@@ -41,7 +41,7 @@ class myItems(fxlpalmtree.fxl):
     def init( self ): #its call before any worksheet parsed.
         from Items import dats
         # self.data = dats
-        self.data = [d for d in dats if d.get('CategoryName') == 'MENU PAKET']
+        self.datas = [d for d in dats if d.get('CategoryName') == 'MENU PAKET']
         
 myItems()        
         
@@ -51,16 +51,16 @@ class myBom(fxlpalmtree.fxl):
 
     #def onCreate(self):
     def init( self ): #its call before any worksheet parsed.
-        item = fxlpalmtree.BANDS['Item'].bandData(False) #dont increment step
+        item = fxlpalmtree.BANDS['Item'].data
         data =[]
         for b in item.get('BoM',[]):
             name,qty = b
             row = getItemByName(name)
-            row['RecipeQty'] = qty
+            row['RecipeQty'] = float(qty)
             data.append(row)
             
         print('BoM.data=', data)
-        self.data = data
+        self.datas = data
     
 
 
