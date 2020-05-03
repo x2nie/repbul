@@ -13,6 +13,15 @@ It's used and is part of fxl Report Builder.
 import re
 from copy import copy
 from openpyxl.formula.translate import Translator
+from openpyxl.formula import Tokenizer
+from openpyxl.utils import (
+    range_boundaries
+    # coordinate_to_tuple,
+    # cols_from_range,
+    # column_index_from_string,
+    # get_column_letter,
+    # range_to_tuple
+)
 
 BANDS = {}
 YCELL = 0
@@ -85,10 +94,43 @@ def parse_row(row):
 ### ######   UPDATE =FORMULA() ()  ######################################### ###
 ### ========================================================================= ###
 
-def _validateFoot(row,tplDatAltRowcount,datcount):
+def _validateFoot(worksheet, row,tplDatAltRowcount,datcount):
     "Handle the formula which is ranged within DAT..ALT into whole parsed of DAT..ALT"
+    # print('_validateFoot '*3, locals())
+    for x,tcell in enumerate(row):
+        if tcell.origin: # it is formulae
+            col = x+1 # ws.cell() always require one based (not zero based)
+            cell=worksheet.cell(row=YCELL, column=col)
+            formula = cell.value
+            tok = Tokenizer(formula)
+
+            formula_changed = False
+            for t in tok.items:
+                # print( "%12s%11s%9s" % (t.value, t.type, t.subtype) )
+                if t.subtype == 'RANGE':
+                    # print(' - range!', t.value)
+                    r = t.value # H10:H11
+                    ws_part, r = Translator.strip_ws_name(r)
+                    if not ws_part and ':' in r: #safety, because sometime range is not range:range
+                        
+                        min_col, min_row, max_col, max_row = range_boundaries(r)
+                        # print(locals())
+                        # print('calc?', max_row - min_row + 1)
+                        if max_row - min_row + 1 == tplDatAltRowcount:
+                            formula_changed = True
+                            # print('calc!')
+                            #reduce minrow
+                            # min_row = max_row - datcount
+                            tl,br = r.split(':')
+                            tl = Translator.translate_range(tl, datcount * -1 + tplDatAltRowcount, 0)
+                            t.value = value = '%s:%s' % (tl,br)
+                            # print(locals())
+                            # print('new val:', value)
+            if formula_changed:
+                cell.value = tok.render()
+
     return
-    for icell in range(len(row.CellS)):
+    for icell in range(len(row)):
         cell = row.Cell(icell)
         f = cell.getFormula()
         #+([a-zA-Z_][a-zA-Z_0-9]*)
@@ -354,11 +396,11 @@ class palmTree():
                 myvars.update(self.dynvar)        
                 for cluster in self.Kind[kind]:
                     if isinstance(cluster,list): 
-                        if kind=='FOT':
-                            _validateFoot(cluster,self.tplDatAltRows,self.datharvested)
                         if self.dynvar or kind in ['HDR']:
                             #DONT PRINT IF NO DATA, BUT HDR IS ALWAYS PRINT
                             rowsharvest+=_fillxlrow(harvest,cluster,self.ssTypeS,myvars)         
+                        if kind=='FOT':
+                            _validateFoot(harvest, cluster,self.tplDatAltRows,self.datharvested)
                     elif isinstance(cluster,palmTree):
                         cluster.harvestCluster(harvest,plainvars)
                     # else:
@@ -463,8 +505,8 @@ class palmTree():
                 rowsharvest+=_fillxlrow(worksheet,cluster,None,plainvars)         
             elif isinstance(cluster,palmTree):
                 cluster.harvestCluster(worksheet,plainvars)
-            else:
-                print('UNKNOWN CLUSTER TYPE:', cluster)
+            # else:
+                # print('UNKNOWN CLUSTER TYPE:', cluster)
         return worksheet
 
     def showMap(self):

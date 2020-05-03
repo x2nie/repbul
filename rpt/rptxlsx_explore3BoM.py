@@ -59,7 +59,7 @@ class myBom(fxlpalmtree.fxl):
             row['RecipeQty'] = float(qty)
             data.append(row)
             
-        print('BoM.data=', data)
+        # print('BoM.data=', data)
         self.datas = data
     
 
