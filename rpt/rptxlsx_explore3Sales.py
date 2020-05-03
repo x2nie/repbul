@@ -4,7 +4,7 @@ from pprint import pprint
 from copy import copy
 
 # wb = openpyxl.load_workbook('Report Inventory Recipe Forecast.xlsx', read_only=False)
-wb = openpyxl.load_workbook('nested.xlsx')
+wb = openpyxl.load_workbook('nested-sales.xlsx')
 tpl = wb.active
 
 # wb2 = openpyxl.Workbook()
@@ -34,18 +34,24 @@ wb.remove(tpl)
 tpl = None
 ws.title = sheet_name
 
+from Items import getItemByName, getItemById
+
 class myItems(fxlpalmtree.fxl):
     _name = 'Item'
 
     #def onCreate(self):
     def init( self ): #its call before any worksheet parsed.
-        from Items import dats
+        # from Items import dats as items
+        from Sellhistory import dats as solds
+        for sold in solds: # each row
+            item_id = sold['Name']
+            item = getItemById(item_id)
+            sold.update(item)
         # self.data = dats
-        self.datas = [d for d in dats if d.get('CategoryName') == 'MENU PAKET']
+        self.datas = solds
         
 myItems()        
         
-from Items import getItemByName
 class myBom(fxlpalmtree.fxl):
     _name = 'BoM'
 
@@ -57,6 +63,8 @@ class myBom(fxlpalmtree.fxl):
             name,qty = b
             row = getItemByName(name)
             row['RecipeQty'] = float(qty)
+            row['SellQuantity'] = item['SellQuantity']
+            row['SellUoM'] = item['Measure']
             data.append(row)
             
         # print('BoM.data=', data)
@@ -68,7 +76,7 @@ class myBom(fxlpalmtree.fxl):
 myBom()
 palm.harvestFarm(ws)
 
-wb2.save('nested-out.xlsx')
+wb2.save('nested-sales-out.xlsx')
 
 # for i, cd in ws1.column_dimensions.items():
 #     print(i, cd.width, cd.index)

@@ -23,10 +23,10 @@ def load_dats(folder, onrow=None):
         with open(join(dats_dir, dat_file), 'r') as f: 
             # row = f.read()
             rows = [] #because perhaps, cf is one pass only, can't be called twice.
-            cf = csv.DictReader(f, fieldnames=['Quantity', 'Name', 'Price', 'Location', 'Customer', 'Amount'])
+            cf = csv.DictReader(f, fieldnames=['SellQuantity', 'Name', 'SellPrice', 'Location', 'Customer', 'Amount'])
             for row in cf:
                 # print('row:', row)
-                row['Date'] = _id = dat_file[:-4] # got '123' from '123.dat'
+                row['SellDate'] = _id = dat_file[:-4] # got '123' from '123.dat'
                 if onrow:
                     onrow(row)
                 rows.append(row)
