@@ -42,9 +42,9 @@ def strToPaths(pathf):
 class Tpl(object):
     def __init__(self, cell):
         self.value = cell.value
-        print('='*19, cell.__class__.__name__, dir(cell))
-        if cell.__class__.__name__ == 'MergedCell':
-            print( cell.coordinate )
+        # print('='*19, cell.__class__.__name__, dir(cell))
+        # if cell.__class__.__name__ == 'MergedCell':
+            # print( cell.coordinate )
         self.origin = cell.coordinate if isinstance(self.value, str) and self.value.startswith('=') else None
         # if isinstance(self.value, str) and self.value.startswith('='):
             # print('='*19, dir(cell))
