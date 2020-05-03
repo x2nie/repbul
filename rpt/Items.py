@@ -21,6 +21,10 @@ def onrow(d):
     d['Price'] = float(Price[:frix]+'.'+Price[frix:])
     if d.get('Quantity'):
         d['Quantity'] = float(d['Quantity'])
+    
+    Value = d['Value']
+    frix = int(d['ValueDigits'])*-1
+    d['Value'] = float(Value[:frix]+'.'+Value[frix:])
     BoM = []
     if d.get('BillOfMaterials'):  #  {'BillOfMaterials': '"SY0031/1","SY0064/1","PK0015/1",',
         p = d['BillOfMaterials']
