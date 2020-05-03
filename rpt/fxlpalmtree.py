@@ -12,6 +12,7 @@ It's used and is part of fxl Report Builder.
 # from xml.dom.minidom import Element
 import re
 from copy import copy
+from openpyxl.formula.translate import Translator
 
 BANDS = {}
 YCELL = 0
@@ -41,15 +42,23 @@ def strToPaths(pathf):
 class Tpl(object):
     def __init__(self, cell):
         self.value = cell.value
-        # if self.value:
+        print('='*19, cell.__class__.__name__, dir(cell))
+        if cell.__class__.__name__ == 'MergedCell':
+            print( cell.coordinate )
+        self.origin = cell.coordinate if isinstance(self.value, str) and self.value.startswith('=') else None
+        # if isinstance(self.value, str) and self.value.startswith('='):
+            # print('='*19, dir(cell))
+            # print(cell.row, cell.column, cell.column_letter, cell.coordinate)
         self.style = copy(cell._style) if self.value else None
         self._field = cell.comment.text if cell.comment else None
             
     def apply(self, cell, data):
-        if self._field:
+        if self._field: #has comment as field_name
             # print('_f:', self._field)
             # print(data)
             cell.value = data.get(self._field)
+        elif self.origin:
+            cell.value = Translator(self.value, origin=self.origin).translate_formula(cell.coordinate)
         else:
             cell.value = self.value
         if self.style:
