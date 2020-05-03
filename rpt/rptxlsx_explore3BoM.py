@@ -29,6 +29,11 @@ palm = fxlpalmtree.palmTree()
 palm.arrangeSeed(tpl)
 # pprint( palm.showMap() )
 
+sheet_name = tpl.title
+wb.remove(tpl)
+tpl = None
+ws.title = sheet_name
+
 class myItems(fxlpalmtree.fxl):
     _name = 'Item'
 
