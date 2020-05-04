@@ -33,6 +33,14 @@ def onrow(d):
         for q in a:
             BoM.append(q.split('/'))
     d['BoM'] = BoM  # [ [SY0031,'1'], ['SY0064','1'] ]
+    
+    LocQty = []
+    if d.get('LocationsAndQuantities'):  #  {'LocationsAndQuantities': '"2/1000/0/0","1/1000/0/0",'
+        p = d['LocationsAndQuantities']
+        a = p.strip(',').replace('"','').split(',')
+        for q in a:
+            LocQty.append(q.split('/'))
+    d['LocQty'] = LocQty  # [ [SY0031,'1'], ['SY0064','1'] ]
         
         
 dats = load_dats('Items', onrow)
